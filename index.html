@@ -7,7 +7,12 @@ html,body{margin:0;background:#0b1522;color:#eef4fb;font-family:Arial,"Microsoft
 .cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}.card,.panel{background:#132234;border:1px solid #263b52;border-radius:10px;padding:14px}
 .card{min-width:160px}.label{font-size:15px;color:#9eb1c4}.value{font-size:30px;color:#62d6a7;font-weight:bold;margin-top:6px}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-button,input,select{background:#183049;color:#fff;border:1px solid #36546f;border-radius:7px;padding:10px 13px;font-size:15px}
+button,input,select{background:#183049;color:#fff;border:1px solid #36546f;border-radius:9px;padding:10px 14px;font-size:15px;transition:all .18s ease}
+button{cursor:pointer;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+button:hover{background:#24506f;border-color:#62d6a7;transform:translateY(-1px);box-shadow:0 5px 14px rgba(0,0,0,.22)}
+button:active{transform:translateY(0);box-shadow:0 2px 6px rgba(0,0,0,.16)}
+button.topbtn.active{background:#245a46;border-color:#62d6a7;box-shadow:0 0 0 2px rgba(98,214,167,.10),0 4px 12px rgba(0,0,0,.18)}
+input:focus,select:focus{outline:none;border-color:#62d6a7;box-shadow:0 0 0 3px rgba(98,214,167,.12)}
 input{min-width:280px}.stats{color:#9eb1c4;margin:10px 0}.tablewrap{overflow:auto;max-height:68vh;border:1px solid #263b52;border-radius:8px}
 table{border-collapse:collapse;width:100%;min-width:1650px;background:#0f1c2b}th,td{padding:11px 13px;border-bottom:1px solid #23384d;white-space:nowrap;font-size:15px}
 th{position:sticky;top:0;background:#173049;color:#c8d7e5;z-index:3}td:nth-child(2){color:#62d6a7;font-weight:bold}td:nth-child(3){font-weight:bold;font-size:16px}
@@ -22,7 +27,7 @@ th{position:sticky;top:0;background:#173049;color:#c8d7e5;z-index:3}td:nth-child
 <div class="card"><div class="label">季节待确认</div><div class="value" id="review">-</div></div>
 </div>
 <div class="panel"><div class="toolbar">
-<button onclick="topN=50;apply()">TOP50</button><button onclick="topN=100;apply()">TOP100</button><button onclick="topN=200;apply()">TOP200</button><button onclick="topN=300;apply()">TOP300</button><button onclick="topN=999999;apply()">全部机会</button>
+<button class="topbtn" onclick="setTop(50,this)">TOP50</button><button class="topbtn active" onclick="setTop(100,this)">TOP100</button><button class="topbtn" onclick="setTop(200,this)">TOP200</button><button class="topbtn" onclick="setTop(300,this)">TOP300</button><button class="topbtn" onclick="setTop(999999,this)">全部机会</button>
 <select id="cat" onchange="apply()"><option value="">全部类目</option></select>
 <select id="type" onchange="apply()"><option value="">全部类型</option><option>持续上涨</option><option>优先</option><option>Halloween</option><option>秋季</option><option>Christmas</option><option value="待确认">季节待确认</option><option value="品牌搜索词=是">品牌搜索词</option></select>
 <input id="q" placeholder="搜索关键词 / 品牌 / 季节 / 类目 / 趋势..." oninput="apply()">
@@ -36,6 +41,12 @@ let all=[],filtered=[],topN=100,page=1,pageSize=100;
 const E=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const text=x=>[x.keyword,x.category,x.trend,x.level,x.product,x.brand_conc,x.brand_search,x.matched_brand,x.season,x.season_reason,x.priority,x.risk,x.fit].join(" ").toLowerCase();
 
+function setTop(n,btn){
+ topN=n;
+ document.querySelectorAll(".topbtn").forEach(b=>b.classList.remove("active"));
+ if(btn)btn.classList.add("active");
+ apply();
+}
 function apply(){
  const q=document.getElementById("q").value.trim().toLowerCase(), typ=document.getElementById("type").value, cat=document.getElementById("cat").value;
  filtered=all.filter(x=>{
