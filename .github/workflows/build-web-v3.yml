@@ -1,0 +1,37 @@
+name: Build Web V3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data-2.json"
+      - "scripts/build_web_v3.py"
+      - ".github/workflows/build-web-v3.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build V3 data
+        run: python3 scripts/build_web_v3.py
+
+      - name: Commit generated web data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json data/chunk-*.json
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git commit -m "Build GitHub v3 web data"
+          git push
