@@ -57,7 +57,7 @@ def main():
     generated_at = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S")
     manifest = {
         "version": src.get("version", "V4.5"),
-        "web_arch": "v3",
+        "web_arch": "v2",
         "date": src.get("date", ""),
         "generated_at": generated_at,
         "copyright": src.get("copyright", "飞羽电竞"),
@@ -81,7 +81,7 @@ def main():
     if total != len(records):
         raise SystemExit(f"chunk validation failed: {total} != {len(records)}")
 
-    print(f"V3 build OK: {len(records)} records, {len(chunks)} chunks")
+    print(f"V2 build OK: {len(records)} records, {len(chunks)} chunks")
     print("Categories:", " / ".join(categories))
     print("Generated at:", generated_at)
 

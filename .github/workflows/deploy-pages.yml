@@ -6,7 +6,8 @@ on:
       - main
     paths:
       - "index.html"
-      - "data.json"
+      - "manifest.json"
+      - "data/**"
       - "assets/**"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
@@ -35,7 +36,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p _site
-          cp index.html data.json _site/
+          cp index.html manifest.json _site/
+          cp -R data _site/
           if [ -d assets ]; then
             cp -R assets _site/
           fi
