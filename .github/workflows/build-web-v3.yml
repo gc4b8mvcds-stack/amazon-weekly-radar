@@ -6,6 +6,7 @@ on:
     paths:
       - "data-2.json"
       - "scripts/build_web_v3.py"
+      - "scripts/validate_web_data.py"
       - ".github/workflows/build-web-v3.yml"
   workflow_dispatch:
 
@@ -20,28 +21,4 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Validate manifest and every chunk
-        run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          root = Path(".")
-          source = json.loads((root / "data-2.json").read_text(encoding="utf-8"))
-          manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
-          records = source["records"]
-          assert manifest["web_arch"] == "v2"
-          assert manifest["summary"]["total"] == len(records)
-          assert manifest["chunk_count"] == len(manifest["chunks"])
-          loaded = []
-          for chunk in manifest["chunks"]:
-              rows = json.loads((root / chunk["path"]).read_text(encoding="utf-8"))["records"]
-              assert len(rows) == chunk["count"]
-              assert rows[0]["pos"] == chunk["start"]
-              assert rows[-1]["pos"] == chunk["end"]
-              loaded.extend(rows)
-          assert loaded == records
-          categories = sorted({c.strip() for row in records for c in row["category"].split(",") if c.strip()})
-          assert categories == manifest["categories"]
-          assert all("," not in category for category in manifest["categories"])
-          print(f"Validated {len(records)} records in {len(manifest['chunks'])} chunks")
-          PY
+        run: python3 scripts/validate_web_data.py
