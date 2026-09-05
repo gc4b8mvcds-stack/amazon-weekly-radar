@@ -2,6 +2,8 @@
 """Convert the V4.5 workbook's complete analysis sheet to web source JSON."""
 
 import argparse
+import base64
+import gzip
 import json
 import math
 from collections import defaultdict
@@ -12,6 +14,30 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data-2.json"
 SHEET = "全部机会分析"
+
+
+def load_previous():
+    if OUTPUT.exists():
+        try:
+            return json.loads(OUTPUT.read_text(encoding="utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            pass
+
+    manifest_path = ROOT / "manifest.json"
+    if not manifest_path.exists():
+        return {}
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    records = []
+    for chunk in manifest.get("chunks", []):
+        path = ROOT / chunk["path"]
+        if not path.exists():
+            continue
+        if chunk.get("encoding") == "gzip-base64" or path.name.endswith(".gz.b64"):
+            payload = json.loads(gzip.decompress(base64.b64decode(path.read_text(encoding="ascii"))))
+        else:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        records.extend(payload.get("records", []))
+    return {"records": records}
 
 
 def clean(value, default=""):
@@ -38,7 +64,7 @@ def main():
     if frame.empty:
         raise SystemExit(f"{SHEET} has no records")
 
-    previous = json.loads(OUTPUT.read_text(encoding="utf-8")) if OUTPUT.exists() else {}
+    previous = load_previous()
     old_scores = {str(row.get("keyword", "")): float(row.get("score", 0)) for row in previous.get("records", [])}
     detailed, broad = defaultdict(list), defaultdict(list)
     for row in frame.to_dict("records"):
