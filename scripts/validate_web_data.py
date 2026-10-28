@@ -4,7 +4,10 @@ import gzip
 import argparse
 import json
 import re
+from collections import Counter
 from pathlib import Path
+
+from import_excel_v45 import read_analysis
 
 import pandas as pd
 
@@ -34,20 +37,21 @@ def main():
     categories = sorted({c.strip() for row in records for c in re.split(r"[,，;；]", row["category"]) if c.strip()})
     assert categories == manifest["categories"]
     assert all(not re.search(r"[,，;；]", category) for category in manifest["categories"])
-    assert manifest["date"] == "2026-08-29"
+    assert manifest["date"] == source["date"]
+    assert [row["pos"] for row in records] == list(range(1, len(records) + 1))
     assert manifest["generated_at"] == manifest["updated_at"]
     assert manifest["updated_at"].endswith("+08:00")
     assert "DecompressionStream(\"gzip\")" in (ROOT / "index.html").read_text(encoding="utf-8")
 
     if args.workbook:
-        frame = pd.read_excel(args.workbook, sheet_name="全部机会分析")
+        frame = read_analysis(args.workbook)
         workbook_rows = [
             (str(keyword), str(category))
             for keyword, category in zip(frame["搜索词"], frame["来源类目"])
         ]
         web_rows = [(str(row["keyword"]), str(row["category"])) for row in records]
         assert len(frame) == len(records)
-        assert set(workbook_rows) == set(web_rows)
+        assert Counter(workbook_rows) == Counter(web_rows)
         workbook_categories = sorted({
             part.strip()
             for value in frame["来源类目"].dropna().astype(str)
@@ -66,3 +70,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

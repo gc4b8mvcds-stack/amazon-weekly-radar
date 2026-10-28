@@ -16,6 +16,24 @@ OUTPUT = ROOT / "data-2.json"
 SHEET = "全部机会分析"
 
 
+def read_analysis(workbook):
+    with pd.ExcelFile(workbook) as book:
+        sheet = next((name for name in (SHEET, "选品总表") if name in book.sheet_names), None)
+        if sheet is None:
+            raise ValueError("Workbook needs 全部机会分析 or 选品总表")
+        frame = pd.read_excel(book, sheet_name=sheet)
+    required = {"搜索词", "来源类目", "最新日期", "最新排名", "机会等级", "趋势类型"}
+    if required - set(frame.columns):
+        raise ValueError(f"Missing columns: {sorted(required - set(frame.columns))}")
+    if frame.empty or frame[["搜索词", "来源类目", "最新日期"]].isna().any().any():
+        raise ValueError("Empty analysis or missing keyword/category/date")
+    dates = pd.to_datetime(frame["最新日期"], errors="raise").dt.strftime("%Y-%m-%d")
+    if dates.nunique() != 1:
+        raise ValueError("Workbook contains mixed reporting dates")
+    frame["最新日期"] = dates
+    return frame
+
+
 def load_previous():
     if OUTPUT.exists():
         try:
@@ -60,11 +78,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("workbook", type=Path)
     args = parser.parse_args()
-    frame = pd.read_excel(args.workbook, sheet_name=SHEET)
+    frame = read_analysis(args.workbook)
     if frame.empty:
         raise SystemExit(f"{SHEET} has no records")
 
     previous = load_previous()
+    manifest_path = ROOT / "manifest.json"
+    if manifest_path.exists():
+        old_date = json.loads(manifest_path.read_text(encoding="utf-8")).get("date", "")
+        if frame["最新日期"].iloc[0] < old_date:
+            raise SystemExit(f"Refusing older data: {frame['最新日期'].iloc[0]} < {old_date}")
     old_scores = {str(row.get("keyword", "")): float(row.get("score", 0)) for row in previous.get("records", [])}
     detailed, broad = defaultdict(list), defaultdict(list)
     for row in frame.to_dict("records"):
@@ -107,3 +130,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
